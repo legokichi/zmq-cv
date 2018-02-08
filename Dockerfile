@@ -13,4 +13,5 @@ ADD . /opt/identity-docker
 RUN mkdir -p /opt/identity-docker/build && \
   cd /opt/identity-docker/build && \
   cmake .. && \
-  make -j
+  make -j && \
+  chmod +x ../identity.bash

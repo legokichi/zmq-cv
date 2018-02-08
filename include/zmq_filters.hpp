@@ -25,7 +25,6 @@ public:
       reader >> *mat;
       auto timestamp = reader.timestamp;
       auto frame_index = reader.frame_index;
-      std::cerr << frame_index << ":" << reader.timestamp_string << "\n";
       return static_cast<void*>(new tuple<cv::Mat*, frame_timestamp, uint32_t>{mat, timestamp, frame_index});
     }else{
       std::cout << "zmq source finished\n";
