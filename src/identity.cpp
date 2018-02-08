@@ -1,16 +1,19 @@
 #include <cstdlib>
 #include <iostream>
 #include <utility>
+#include <vector>
+#include <string>
 #include <thread>
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <tbb/pipeline.h>
+#include <tbb_filters.hpp>
 
 using std::string;
+using std::vector;
 using std::thread;
 
 int main(int argc, char* argv[]){
-  int GPU_ID;
   vector<string> INPUT_VIDEO_PATH;
   string OUTPUT_VIDEO_PATH;
   string OUTPUT_LOG_PATH;

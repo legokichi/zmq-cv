@@ -12,14 +12,14 @@ using std::vector;
 
 class Source: public tbb::filter {
 public:
-  bool USE_SKIP;
-  float RESIZE_SCALE;
-  bool USE_RESIZE;
+  const vector<string> INPUT_VIDEO_PATH;
+  const bool USE_SKIP;
+  const bool USE_RESIZE;
+  const float RESIZE_SCALE;
   cv::Size DEST_SIZE;
   double fps = 0.0;
   size_t reader_idx = 0;
   size_t frame_idx = 0;
-  vector<string> INPUT_VIDEO_PATH;
 private:
   vector<cv::VideoCapture> readers;
 public:
@@ -27,6 +27,7 @@ public:
   : filter(tbb::filter::mode::serial_in_order)
   , INPUT_VIDEO_PATH{INPUT_VIDEO_PATH}
   , USE_SKIP{USE_SKIP}
+  , USE_RESIZE{!(0.999 < RESIZE_SCALE && RESIZE_SCALE < 1.001)}
   , RESIZE_SCALE{RESIZE_SCALE} {
     int width = 0;
     int height = 0;
@@ -57,7 +58,6 @@ public:
     if(USE_SKIP){ fps = fps/2.0; }
     printf("finaly: %dx%d,%f\n", width, height, fps);
     printf("RESIZE_SCALE: %f\n", RESIZE_SCALE);
-    USE_RESIZE = !(0.999 < RESIZE_SCALE && RESIZE_SCALE < 1.001);
     printf("USE_RESIZE: %d\n", USE_RESIZE);
     DEST_SIZE = !USE_RESIZE ? cv::Size{width, height}
               :               cv::Size{static_cast<int>(std::lround(RESIZE_SCALE*static_cast<float>(width))), static_cast<int>(std::lround(RESIZE_SCALE*static_cast<float>(height)))};
