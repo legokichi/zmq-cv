@@ -83,7 +83,7 @@ main_func()
     while keep_looping "$FORCE"
     do
         echo "$(date '+%Y-%m-%d_%H:%M:%S%z') Starting the tracker ..."
-        time ./build/zmqsense \
+        time ./build/zmq_identity \
           --socktype=$ZMQ_FRAME_GRABBER_SOCKTYPE \
           --endpoint=$ZMQ_FRAME_GRABBER_ENDPOINT \
           --timeout=$INACTIVITY_TIMEOUT \
@@ -96,7 +96,7 @@ main_func()
 
         if [ $RETVAL -eq 0 ]; then
 
-          export FILE_NAME=video0_`python3 rename.py --input result.tsv`
+          export FILE_NAME=video0_`python3 script/rename.py --input result.tsv`
           mkdir -p $OUTPUT_DIR/videos
           mkdir -p $OUTPUT_DIR/texts
           mv ./result.mp4 $OUTPUT_DIR/videos/$FILE_NAME.mp4

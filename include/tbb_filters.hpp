@@ -7,10 +7,13 @@
 #include <tbb/pipeline.h>
 #include <opencv2/core.hpp>
 
+namespace gst {
+
+using namespace std::literals::string_literals;
 using std::string;
 using std::vector;
 
-class Source: public tbb::filter {
+class VideoSource: public tbb::filter {
 public:
   const vector<string> INPUT_VIDEO_PATH;
   const bool USE_SKIP;
@@ -23,7 +26,7 @@ public:
 private:
   vector<cv::VideoCapture> readers;
 public:
-  Source(vector<string> INPUT_VIDEO_PATH, bool USE_SKIP, float RESIZE_SCALE)
+  VideoSource(const vector<string> INPUT_VIDEO_PATH, const bool USE_SKIP, const float RESIZE_SCALE)
   : filter(tbb::filter::mode::serial_in_order)
   , INPUT_VIDEO_PATH{INPUT_VIDEO_PATH}
   , USE_SKIP{USE_SKIP}
@@ -32,37 +35,38 @@ public:
     int width = 0;
     int height = 0;
     for(auto path: INPUT_VIDEO_PATH){
-      auto reader = cv::VideoCapture{path};
-      if(!reader.isOpened()){
-        printf("C++: reader cannot opened\n");
-        throw;
-      }
+      auto gst_cmd = "filesrc location="s + path + " ! decodebin ! videoconvert ! appsink sync=false";
+      std::cerr << gst_cmd << "\n";
+      auto reader = cv::VideoCapture{gst_cmd};
+      if(!reader.isOpened()){ throw std::runtime_error{"cannot open reader "s + gst_cmd}; }
       int _width = reader.get(CV_CAP_PROP_FRAME_WIDTH);
       int _height = reader.get(CV_CAP_PROP_FRAME_HEIGHT);
       double _fps = reader.get(CV_CAP_PROP_FPS);
-      printf("%dx%d,%f\n", _width, _height, _fps);
-      if(width != 0 && width != _width){ printf("width size isnt match!\n"); throw; }
-      if(height != 0 && height != _height){ printf("height size isnt match!\n"); throw; }
+      std::cerr << "frame w,h,fps: " << _width << "," << _height << "," << _fps << "\n";
+      if(width != 0 && width != _width){ throw std::runtime_error{"width doesnt match("s + std::to_string(width) + "," + std::to_string(_width) + ")"}; }
+      if(height != 0 && height != _height){ throw std::runtime_error{"height doesnt match("s + std::to_string(height) + "," + std::to_string(_height) + ")"}; }
       if(fps != 0 && fps != _fps){
-        printf("warning: fps isnt match. using round\n");
-        if(std::round(fps) != std::round(_fps)){ printf("error: fps isnt match(%f,%f)\n", fps, _fps); throw; }
+        std::cerr << "warning: fps isnt match. using round\n";
+        if(std::round(fps) != std::round(_fps)){ throw std::runtime_error{"fps doesnt match("s + std::to_string(fps) + "," + std::to_string(_fps) + ")"}; }
         _fps = std::pow(std::round(fps) - fps, 2) > std::pow(std::round(fps) - _fps, 2) ? _fps : fps;
-        printf("warning: %f fps adopted\n", _fps);
+        std::cerr << "warning: " << _fps << " fps adopted\n";
       }
       width = _width;
       height = _height;
       fps = _fps;
       readers.push_back(reader);
     }
-    printf("USE_SKIP: %d\n", USE_SKIP);
+    std::cerr << "USE_SKIP: " << USE_SKIP << "\n";
     if(USE_SKIP){ fps = fps/2.0; }
-    printf("finaly: %dx%d,%f\n", width, height, fps);
-    printf("RESIZE_SCALE: %f\n", RESIZE_SCALE);
-    printf("USE_RESIZE: %d\n", USE_RESIZE);
+    std::cerr << "finaly w,h,fps: " << width << "," << height << "," << fps << "\n";
+    std::cerr << "RESIZE_SCALE: " << RESIZE_SCALE << "\n";
+    std::cerr << "USE_RESIZE: " << USE_RESIZE << "\n";
     DEST_SIZE = !USE_RESIZE ? cv::Size{width, height}
-              :               cv::Size{static_cast<int>(std::lround(RESIZE_SCALE*static_cast<float>(width))), static_cast<int>(std::lround(RESIZE_SCALE*static_cast<float>(height)))};
-    printf("DEST_SIZE: %d x %d\n", DEST_SIZE.width, DEST_SIZE.height);
-  };
+              :               cv::Size{
+                                static_cast<int>(std::lround(RESIZE_SCALE*static_cast<float>(width))),
+                                static_cast<int>(std::lround(RESIZE_SCALE*static_cast<float>(height))) };
+    std::cerr << "DEST_SIZE: " << DEST_SIZE.width << "," << DEST_SIZE.height << "\n";
+  }
   void* operator()(void*){
     while(true){
       auto reader = readers[reader_idx];
@@ -83,32 +87,32 @@ public:
       }
       delete mat;
       // reader consumed
-      std::cout << INPUT_VIDEO_PATH[reader_idx] << " finished" << std::endl;
+      std::cerr << INPUT_VIDEO_PATH[reader_idx] << " finished\n";
       if(readers.size() != reader_idx + 1){
         reader_idx++;
         frame_idx = 0;
         continue;
       }
-      std::cout << "all readers finished" << std::endl;
+      std::cerr << "all readers finished\n";
       return nullptr;
     }
-  };
+  }
 };
 
-class Sink: public tbb::filter {
+class VideoSink: public tbb::filter {
 private:
   cv::VideoWriter writer;
 public:
-  Sink(const string& OUTPUT_VIDEO_PATH, const double fps, const cv::Size DEST_SIZE)
+  VideoSink(const string& OUTPUT_VIDEO_PATH, const double fps, const cv::Size DEST_SIZE)
   : filter{tbb::filter::mode::serial_in_order} {
-    std::cout << "OUTPUT_VIDEO_PATH: " << OUTPUT_VIDEO_PATH << std::endl;
-    auto gstcom = "appsrc ! videoconvert ! x264enc ! video/x-h264,profile=main ! mp4mux ! filesink sync=false location=" + OUTPUT_VIDEO_PATH + " ";
-    std::cout << "gst: " << gstcom << std::endl;
-    writer = cv::VideoWriter(gstcom, 0, fps, DEST_SIZE, true);
-    if(!writer.isOpened()){ printf("C++: writer not opened\n"); throw; }
+    std::cerr << "OUTPUT_VIDEO_PATH: " << OUTPUT_VIDEO_PATH << "\n";
+    auto gst_cmd = "appsrc ! videoconvert ! x264enc ! video/x-h264,profile=main ! mp4mux ! filesink sync=false location="s + OUTPUT_VIDEO_PATH + " ";
+    std::cout << gst_cmd << "\n";
+    writer = cv::VideoWriter(gst_cmd, 0, fps, DEST_SIZE, true);
+    if(!writer.isOpened()){ throw std::runtime_error{"cannot not open writer :"s + gst_cmd}; }
   }
   void* operator()(void* ptr){
-    if(ptr == nullptr){ std::cout << "writer got nullptr" << std::endl; return nullptr; }
+    if(ptr == nullptr){ std::cerr << "writer got nullptr\n"; return nullptr; }
     auto src = static_cast<cv::Mat*>(ptr);
     writer.write(*src);
     delete src;
@@ -116,4 +120,5 @@ public:
   }
 };
 
+}
 #endif // TBB_FILTER_HPP

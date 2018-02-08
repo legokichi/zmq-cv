@@ -2,33 +2,36 @@
 #define ZMQ_FILTER_HPP
 
 #include <string>
-#include <vector>
-#include <utility>
+#include <tuple>
 #include <tbb/pipeline.h>
 #include <opencv2/core.hpp>
-#include <zmq_reader.hpp>
+#include <zmq_video_capture.hpp>
 
 namespace zmq {
 
-class Source: public tbb::filter {
+using std::tuple;
+
+class VideoSource: public tbb::filter {
 public:
   zmq::VideoCapture reader;
-  Source(const string& zmq_endpoint, const int zmq_socktype, const int inactivity_timeout)
-  : filter(tbb::filter::mode::serial_in_order) {
-    reader = zmq::VideoCapture{zmq_endpoint, zmq_socktype, inactivity_timeout};
-    printf("finaly: %dx%d,%f\n", reader.width, reader.height, reader.fps);
-  };
+  VideoSource(const string& zmq_endpoint, const string& zmq_socktype, const int inactivity_timeout)
+  : filter{tbb::filter::mode::serial_in_order}
+  , reader{zmq_endpoint, zmq_socktype, inactivity_timeout} {
+    std::cerr << "w,h,fps" << reader.width << reader.height << reader.fps << "\n";
+  }
   void* operator()(void*){
     if(reader.isOpened()){
       auto mat = new cv::Mat{};
-      reader >> mat;
+      reader >> *mat;
       auto timestamp = reader.timestamp;
-      return static_cast<void*>(mat);
+      auto frame_index = reader.frame_index;
+      std::cerr << frame_index << ":" << reader.timestamp_string << "\n";
+      return static_cast<void*>(new tuple<cv::Mat*, frame_timestamp, uint32_t>{mat, timestamp, frame_index});
     }else{
-      std::cout << "finished" << std::endl;
+      std::cout << "zmq source finished\n";
       return nullptr;
     }
-  };
+  }
 };
 
 }

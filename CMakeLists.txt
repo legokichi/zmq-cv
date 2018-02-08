@@ -49,6 +49,18 @@ target_link_libraries(
     identity
     ${TBB_LIBRARIES}
     ${OpenCV_LIBS}
+    ${ZMQ_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+)
+
+add_executable(zmq_identity ${CMAKE_SOURCE_DIR}/src/zmq_identity.cpp)
+#set(CMAKE_EXE_LINKER_FLAGS "-static")
+
+target_link_libraries(
+    zmq_identity
+    ${TBB_LIBRARIES}
+    ${OpenCV_LIBS}
     /usr/local/lib/libzmqpp.so
     /usr/lib/x86_64-linux-gnu/libzmq.so
     ${ZMQ_LIBRARIES}
