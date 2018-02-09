@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euvx
 
+
 install_sodium()
 {
   mkdir -p /opt
@@ -103,9 +104,26 @@ install_date()
   popd
 }
 
+cleanup()
+{
+  rm -rf /opt/*
+}
 
 
-install_date
-install_sodium
-install_zmqpp
-install_opencv
+while [ $# -gt 0 ];
+do
+  case "$1" in
+    all)
+      install_date
+      install_sodium
+      install_zmqpp
+      install_opencv
+      ;;
+    date) install_date ;;
+    sodium) install_sodium ;;
+    zmqpp) install_zmqpp ;;
+    opencv) install_opencv ;;
+    *) exit 1 ;;
+  esac
+  shift
+done
