@@ -96,7 +96,8 @@ main_func()
 
         if [ $RETVAL -eq 0 ]; then
 
-          export FILE_NAME=video0_`python3 script/rename.py --input result.tsv`
+          export FILE_NAME=video0_$(head -n1 result.tsv | sed -e 's/\s/_/g')
+
           mkdir -p $OUTPUT_DIR/videos
           mkdir -p $OUTPUT_DIR/texts
           mv ./result.mp4 $OUTPUT_DIR/videos/$FILE_NAME.mp4

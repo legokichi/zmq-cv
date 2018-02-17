@@ -8,6 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <tbb/pipeline.h>
+#include <date/date.h>
 #include <tbb_filters.hpp>
 #include <zmq_filters.hpp>
 
@@ -37,6 +38,7 @@ namespace zmq {
       auto [src, timestamp, frame_index] = *_ptr;
       delete _ptr;
       using namespace date;
+      std::cerr << frame_index << ": " << timestamp << "\n";
       fout << timestamp << "\n";
       //auto ret = foo_read(foo_ptr.get(), src);
       return static_cast<void*>(src);
@@ -59,7 +61,7 @@ int main(int argc, char* argv[]){
     ("endpoint", boost::program_options::value<string>(&ZMQ_FRAME_GRABBER_ENDPOINT)->default_value("ipc://@/scorer/frame_grabber-video0"), "ZMQ_FRAME_GRABBER_ENDPOINT")
     ("socktype", boost::program_options::value<string>(&ZMQ_FRAME_GRABBER_SOCKTYPE)->default_value("PULL"), "ZMQ_FRAME_GRABBER_SOCKTYPE = PULL|SUB")
     ("timeout", boost::program_options::value<int>(&INACTIVITY_TIMEOUT)->default_value(3), "INACTIVITY_TIMEOUT")
-    ("output,o", po::value<string>(&OUTPUT_VIDEO_PATH)->required(), "output mp4 video file path")
+    ("output_video", po::value<string>(&OUTPUT_VIDEO_PATH)->required(), "output mp4 video file path")
     ("output_log", boost::program_options::value<string>(&OUTPUT_LOG_PATH)->required(), "OUTPUT_LOG_PATH")
     ("gpu", po::value<int>(&GPU_ID)->default_value(0), "using gpu id")
   ;
