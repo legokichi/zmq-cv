@@ -123,6 +123,7 @@ do
     sodium) install_sodium ;;
     zmqpp) install_zmqpp ;;
     opencv) install_opencv ;;
+    cleanup) cleanup ;;
     *) exit 1 ;;
   esac
   shift

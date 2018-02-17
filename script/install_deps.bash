@@ -18,7 +18,8 @@ install_build_tools()
     tar zip unzip zlib1g-dev bzip2 libbz2-dev \
     openssl libssl-dev \
     git apt-transport-https software-properties-common ppa-purge apt-utils ca-certificates \
-    build-essential binutils cmake pkg-config libtool autoconf automake autogen
+    build-essential binutils cmake pkg-config libtool autoconf automake autogen \
+    tree
   
   add-apt-repository ppa:ubuntu-toolchain-r/test
   apt-get update -y
