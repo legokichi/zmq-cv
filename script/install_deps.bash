@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euvx
 
+
 initial_update()
 {
   apt-get update -y
@@ -36,7 +37,7 @@ install_debug_tools()
     sudo
 }
 
-install_deps()
+install_boost_tbb_blas()
 {
   apt-get install -y --no-install-recommends \
     libboost-all-dev \
@@ -45,6 +46,11 @@ install_deps()
     libeigen3-dev liblapacke-dev
   apt-get install -y --no-install-recommends \
     libzmq3-dev
+}
+
+
+install_gstreamer()
+{
   apt-get install -y \
     gstreamer1.0-tools \
     gstreamer1.0-libav \
@@ -83,8 +89,25 @@ cleanup()
   rm -rf /var/lib/apt/lists/*
 }
 
-initial_update
-install_build_tools
-#install_debug_tools
-install_deps
-cleanup
+
+while [ $# -gt 0 ];
+do
+  case "$1" in
+    all)
+      initial_update
+      install_build_tools
+      #install_debug_tools
+      install_boost_tbb_blas
+      install_gstreamer
+      cleanup
+      ;;
+    update) initial_update ;;
+    build) install_build_tools ;;
+    debug) install_debug_tools ;;
+    boost) install_boost_tbb_blas ;;
+    gstreamer) install_gstreamer ;;
+    cleanup) cleanup ;;
+    *) exit 1 ;;
+  esac
+  shift
+done

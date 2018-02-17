@@ -5,13 +5,19 @@ ENV DEBIAN_FRONTEND "noninteractive"
 
 WORKDIR /opt
 ADD script/install_deps.bash /opt
-RUN bash /opt/install_deps.bash
+RUN bash /opt/install_deps.bash all cleanup
+#RUN bash /opt/install_deps.bash update build debug boost
+#RUN bash /opt/install_deps.bash gstreamer
+#RUN bash /opt/install_deps.bash cleanup
 ADD script/build_deps.bash /opt
-RUN bash /opt/build_deps.bash
+RUN bash /opt/build_deps.bash all cleanup
+#RUN bash /opt/build_deps.bash date sodium zmqpp 
+#RUN bash /opt/build_deps.bash opencv
+#RUN bash /opt/build_deps.bash cleanup
 WORKDIR /opt/identity-docker
 ADD . /opt/identity-docker
 RUN mkdir -p /opt/identity-docker/build && \
   cd /opt/identity-docker/build && \
   cmake .. && \
   make -j && \
-  chmod 701 ../identity.bash
+  chmod +x ../identity.bash

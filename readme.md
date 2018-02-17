@@ -75,7 +75,7 @@ mkdir -p /opt/zmq-cv-dev/build/ && pushd /opt/zmq-cv-dev/build/ && cmake .. && m
 ```
 
 ```sh
-scp -i ~/google2.ssh ubuntu@${HOST}:/home/ubuntu/zmq-cv/b.mp4 ./
+scp -i ~/google2.ssh ubuntu@${IP}:/home/ubuntu/zmq-cv/b.mp4 ./
 ```
 
 ```sh
@@ -85,7 +85,7 @@ rsync \
   -ahrv --delete --stats --progress \
   -e "ssh -i ~/google2.ssh" \
   ./ \
-  ubuntu@${HOST}:/home/ubuntu/zmq-cv/
+  ubuntu@${IP}:/home/ubuntu/zmq-cv/
 ```
 
 -n で dry run
