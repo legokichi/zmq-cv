@@ -42,11 +42,11 @@ link_directories(
     /usr/lib/x86_64-linux-gnu/
 )
 
-add_executable(identity ${CMAKE_SOURCE_DIR}/src/identity.cpp)
+add_executable(cli ${CMAKE_SOURCE_DIR}/src/cli.cpp)
 #set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 target_link_libraries(
-    identity
+    cli
     ${TBB_LIBRARIES}
     ${OpenCV_LIBS}
     ${ZMQ_LIBRARIES}
@@ -54,11 +54,11 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
-add_executable(zmq_identity ${CMAKE_SOURCE_DIR}/src/zmq_identity.cpp)
+add_executable(zmq ${CMAKE_SOURCE_DIR}/src/zmq.cpp)
 #set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 target_link_libraries(
-    zmq_identity
+    zmq
     ${TBB_LIBRARIES}
     ${OpenCV_LIBS}
     /usr/local/lib/libzmqpp.so
