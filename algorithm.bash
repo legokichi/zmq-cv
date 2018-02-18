@@ -83,7 +83,7 @@ main_func()
     while keep_looping "$FORCE"
     do
         echo "$(date '+%Y-%m-%d_%H:%M:%S%z') Starting the tracker ..."
-        time ./build/zmq_identity \
+        time ./build/zmq \
           --socktype=$ZMQ_FRAME_GRABBER_SOCKTYPE \
           --endpoint=$ZMQ_FRAME_GRABBER_ENDPOINT \
           --timeout=$INACTIVITY_TIMEOUT \

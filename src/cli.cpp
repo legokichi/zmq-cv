@@ -13,24 +13,21 @@ using std::tuple;
 using std::vector;
 using std::thread;
 
-class GPUFilter: public tbb::thread_bound_filter {
-private:
-  // const shared_ptr<foo> foo_ptr;
-public:
-  GPUFilter(const cv::Size DEST_SIZE, const int GPU_ID)
-  : thread_bound_filter(tbb::filter::mode::serial_in_order)
-  // , foo_ptr{foo_create(DEST_SIZE.width, DEST_SIZE.height, GPU_ID), foo_destroy}
-   {
-    // if(foo_ptr == nullptr){ throw std::runtime_error{"cannot initialize foo"}; }
-  }
-  void* operator()(void* ptr){
-    if(ptr == nullptr){ std::cerr << "sense got nullptr" << std::endl; return nullptr; }
-    auto src = static_cast<cv::Mat*>(ptr);
-    //auto ret = foo_read(foo_ptr.get(), src);
-    return static_cast<void*>(src);
-  }
-};
-
+namespace gpu{
+  class Processor: public tbb::thread_bound_filter {
+  private:
+  public:
+    Processor(const cv::Size DEST_SIZE, const int GPU_ID)
+    : thread_bound_filter(tbb::filter::mode::serial_in_order)
+    {
+    }
+    void* operator()(void* ptr){
+      if(ptr == nullptr){ std::cerr << "proc got nullptr" << std::endl; return nullptr; }
+      auto src = static_cast<cv::Mat*>(ptr);
+      return static_cast<void*>(src);
+    }
+  };
+}
 
 int main(int argc, char* argv[]){
   int GPU_ID;
@@ -61,7 +58,7 @@ int main(int argc, char* argv[]){
 
   tbb::pipeline pipe;
   auto source = gst::VideoSource{INPUT_VIDEO_PATH, USE_SKIP, RESIZE_SCALE};
-  auto filter = GPUFilter{source.DEST_SIZE, GPU_ID};
+  auto filter = gpu::Processor{source.DEST_SIZE, GPU_ID};
   auto sink = gst::VideoSink{OUTPUT_VIDEO_PATH, source.fps, source.DEST_SIZE};
   pipe.add_filter(source);
   pipe.add_filter(filter);

@@ -13,7 +13,7 @@ docker run \
   --rm -ti \
   -v `pwd`:/data \
   zmq_cv \
-    /opt/identity-docker/build/identity \
+    /opt/algorithm/build/cli \
       --input /data/a.mp4 \
       --output /data/b.mp4
 ```
@@ -45,7 +45,7 @@ docker run \
   -e INACTIVITY_TIMEOUT=10 \
   -e OUTPUT_DIR="/data/out" \
   zmq_cv \
-    /opt/identity-docker/identity.bash pull one-shot
+    /opt/algorithm/algorithm.bash pull one-shot
 ```
 
 ```sh
@@ -66,7 +66,7 @@ docker run \
 
 mkdir -p /opt/zmq-cv-dev/build/ && pushd /opt/zmq-cv-dev/build/ && cmake .. && make -j && popd
 
-./build/zmq_identity \
+./build/zmq \
   --socktype="PULL" \
   --endpoint="ipc://@/scorer/frame_grabber-video0" \
   --timeout=10 \

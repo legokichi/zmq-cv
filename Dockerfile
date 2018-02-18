@@ -14,10 +14,10 @@ RUN bash /opt/build_deps.bash all cleanup
 #RUN bash /opt/build_deps.bash date sodium zmqpp 
 #RUN bash /opt/build_deps.bash opencv
 #RUN bash /opt/build_deps.bash cleanup
-WORKDIR /opt/identity-docker
-ADD . /opt/identity-docker
-RUN mkdir -p /opt/identity-docker/build && \
-  cd /opt/identity-docker/build && \
+WORKDIR /opt/algorithm
+ADD . /opt/algorithm
+RUN mkdir -p /opt/algorithm/build && \
+  cd /opt/algorithm/build && \
   cmake .. && \
   make -j && \
-  chmod +x ../identity.bash
+  chmod +x ../algorithm.bash

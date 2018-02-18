@@ -20,17 +20,14 @@ using std::thread;
 using zmq::zmq_source_socktype_t;
 
 namespace zmq {
-  class GPUFilter: public tbb::thread_bound_filter {
+  class Processor: public tbb::thread_bound_filter {
   private:
     std::ofstream fout;
-    // const shared_ptr<foo> foo_ptr;
   public:
-    GPUFilter(const cv::Size DEST_SIZE, const int GPU_ID, const string& OUTPUT_LOG_PATH)
+    Processor(const cv::Size DEST_SIZE, const int GPU_ID, const string& OUTPUT_LOG_PATH)
     : thread_bound_filter(tbb::filter::mode::serial_in_order)
     , fout{OUTPUT_LOG_PATH}
-    // , foo_ptr{foo_create(DEST_SIZE.width, DEST_SIZE.height, GPU_ID), foo_destroy}
     {
-      // if(foo_ptr == nullptr){ throw std::runtime_error{"cannot initialize foo"}; }
     }
     void* operator()(void* ptr){
       if(ptr == nullptr){ std::cerr << "sense got nullptr" << std::endl; return nullptr; }
@@ -40,7 +37,6 @@ namespace zmq {
       using namespace date;
       std::cerr << frame_index << ": " << timestamp << "\n";
       fout << timestamp << "\n";
-      //auto ret = foo_read(foo_ptr.get(), src);
       return static_cast<void*>(src);
     }
   };
@@ -83,7 +79,7 @@ int main(int argc, char* argv[]){
 
   tbb::pipeline pipe;
   auto source = zmq::VideoSource{ZMQ_FRAME_GRABBER_ENDPOINT, ZMQ_FRAME_GRABBER_SOCKTYPE, INACTIVITY_TIMEOUT};
-  auto filter = zmq::GPUFilter{source.reader.size, GPU_ID, OUTPUT_LOG_PATH};
+  auto filter = zmq::Processor{source.reader.size, GPU_ID, OUTPUT_LOG_PATH};
   auto sink = gst::VideoSink{OUTPUT_VIDEO_PATH, source.reader.fps, source.reader.size};
   pipe.add_filter(source);
   pipe.add_filter(filter);
