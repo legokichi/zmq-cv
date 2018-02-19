@@ -96,7 +96,7 @@ main_func()
 
         if [ $RETVAL -eq 0 ]; then
 
-          export FILE_NAME=video0_$(head -n1 result.tsv | sed -e 's/\s/_/g')
+          export FILE_NAME=video0_$(head -n1 result.tsv | sed -e 's/\s/_/g' | sed -e 's/\(\.[0-9]\+\)$//g' )
 
           mkdir -p $OUTPUT_DIR/videos
           mkdir -p $OUTPUT_DIR/texts
