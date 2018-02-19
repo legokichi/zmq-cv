@@ -1,4 +1,5 @@
 #!/bin/bash
+set -evx
 PROG=`basename $0`
 
 
@@ -96,7 +97,8 @@ main_func()
 
         if [ $RETVAL -eq 0 ]; then
 
-          export FILE_NAME=video0_$(head -n1 result.tsv | sed -e 's/\s/_/g' | sed -e 's/\(\.[0-9]\+\)$//g' )
+          export FILE_NAME=video0_$(head -n1 result.tsv | sed -e 's/\(\.[0-9]\+\)$//' | python3 script/rename.py | sed -e 's/\(\:\)\([0-9]\+\)$/\2/' | sed -e 's/\s/_/g' )
+          echo "filename $FILE_NAME"
 
           mkdir -p $OUTPUT_DIR/videos
           mkdir -p $OUTPUT_DIR/texts
