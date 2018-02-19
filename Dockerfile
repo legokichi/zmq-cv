@@ -11,7 +11,7 @@ RUN bash /opt/install_deps.bash all cleanup
 #RUN bash /opt/install_deps.bash cleanup
 ADD script/build_deps.bash /opt
 RUN bash /opt/build_deps.bash all cleanup
-#RUN bash /opt/build_deps.bash date sodium zmqpp 
+#RUN bash /opt/build_deps.bash date sodium zmqpp
 #RUN bash /opt/build_deps.bash opencv
 #RUN bash /opt/build_deps.bash cleanup
 WORKDIR /opt/algorithm

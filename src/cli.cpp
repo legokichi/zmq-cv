@@ -6,25 +6,42 @@
 #include <opencv2/opencv.hpp>
 #include <boost/program_options.hpp>
 #include <tbb/pipeline.h>
-#include <tbb_filters.hpp>
+#include <video_filters.hpp>
 
 using std::string;
 using std::tuple;
 using std::vector;
 using std::thread;
 
-namespace gpu{
+namespace gpu {
   class Processor: public tbb::thread_bound_filter {
   private:
   public:
     Processor(const cv::Size DEST_SIZE, const int GPU_ID)
-    : thread_bound_filter(tbb::filter::mode::serial_in_order)
+    : thread_bound_filter{tbb::filter::mode::serial_in_order}
     {
     }
     void* operator()(void* ptr){
-      if(ptr == nullptr){ std::cerr << "proc got nullptr" << std::endl; return nullptr; }
+      if(ptr == nullptr){ std::cerr << "processor got nullptr\n"; return nullptr; }
       auto src = static_cast<cv::Mat*>(ptr);
       return static_cast<void*>(src);
+    }
+  };
+
+  class Logger: public tbb::filter {
+  private:
+    std::ofstream fout;
+  public:
+    Logger(const string& OUTPUT_LOG_PATH)
+    : filter{tbb::filter::mode::serial_in_order}
+    , fout{OUTPUT_LOG_PATH}
+    {
+    }
+    void* operator()(void* ptr){
+      if(ptr == nullptr){ std::cerr << "logger got nullptr\n"; return nullptr; }
+      auto src = static_cast<cv::Mat>(*ptr);
+      //fout << timestamp << "\n";
+      return static_cast<void*>(ptr);
     }
   };
 }
@@ -43,6 +60,7 @@ int main(int argc, char* argv[]){
     ("input,i", po::value<vector<string>>(&INPUT_VIDEO_PATH)->multitoken()->required(), "input video file path")
     ("output,o", po::value<string>(&OUTPUT_VIDEO_PATH)->required(), "output mp4 video file path if you need")
     ("gpu", po::value<int>(&GPU_ID)->default_value(0), "using gpu id")
+    ("log", boost::program_options::value<string>(&OUTPUT_LOG_PATH)->default_value("log.tsv"), "OUTPUT_LOG_PATH")
     ("skip", po::bool_switch(&USE_SKIP)->default_value(false), "1/2 fps")
     ("resize", po::value<float>(&RESIZE_SCALE)->default_value(1.0), "image resize scale")
   ;
@@ -57,18 +75,20 @@ int main(int argc, char* argv[]){
   }
 
   tbb::pipeline pipe;
-  auto source = gst::VideoSource{INPUT_VIDEO_PATH, USE_SKIP, RESIZE_SCALE};
-  auto filter = gpu::Processor{source.DEST_SIZE, GPU_ID};
-  auto sink = gst::VideoSink{OUTPUT_VIDEO_PATH, source.fps, source.DEST_SIZE};
+  auto source = video::VideoSource{INPUT_VIDEO_PATH, USE_SKIP, RESIZE_SCALE};
+  auto processor = gpu::Processor{source.DEST_SIZE, GPU_ID};
+  auto logger = gpu::Logger{OUTPUT_LOG_PATH};
+  auto sink = video::VideoSink{OUTPUT_VIDEO_PATH, source.fps, source.DEST_SIZE};
   pipe.add_filter(source);
-  pipe.add_filter(filter);
+  pipe.add_filter(processor);
+  pipe.add_filter(logger);
   pipe.add_filter(sink);
 
   // pipe process run in another thread
   auto t = thread{([&](){ pipe.run(16); })};
 
   // gpu worker run in main thread
-  while (filter.process_item() != tbb::thread_bound_filter::end_of_stream){ continue; }
+  while (processor.process_item() != tbb::thread_bound_filter::end_of_stream){ continue; }
 
   // waiting all worker stoppped
   t.join();

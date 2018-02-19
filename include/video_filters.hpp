@@ -7,7 +7,7 @@
 #include <tbb/pipeline.h>
 #include <opencv2/core.hpp>
 
-namespace gst {
+namespace video {
 
 using namespace std::literals::string_literals;
 using std::string;

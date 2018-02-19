@@ -9,7 +9,7 @@
 #include <boost/program_options.hpp>
 #include <tbb/pipeline.h>
 #include <date/date.h>
-#include <tbb_filters.hpp>
+#include <video_filters.hpp>
 #include <zmq_filters.hpp>
 
 using namespace std::literals::string_literals;
@@ -23,11 +23,11 @@ namespace zmq {
   class Processor: public tbb::thread_bound_filter {
   public:
     Processor(const cv::Size DEST_SIZE, const int GPU_ID)
-    : thread_bound_filter(tbb::filter::mode::serial_in_order)
+    : thread_bound_filter{tbb::filter::mode::serial_in_order}
     {
     }
     void* operator()(void* ptr){
-      if(ptr == nullptr){ std::cerr << "gpu processor got nullptr" << std::endl; return nullptr; }
+      if(ptr == nullptr){ std::cerr << "processor got nullptr\n"; return nullptr; }
       auto _ptr = static_cast<tuple<cv::Mat*, frame_timestamp, uint32_t>*>(ptr);
       auto [src, timestamp, frame_index] = *_ptr;
       auto processed = new cv::Mat{};
@@ -36,17 +36,17 @@ namespace zmq {
     }
   };
 
-  class DateTimeFilter: public tbb::filter {
+  class Logger: public tbb::filter {
   private:
     std::ofstream fout;
   public:
-    DateTimeFilter(const string& OUTPUT_LOG_PATH)
-    : filter(tbb::filter::mode::serial_in_order)
+    Logger(const string& OUTPUT_LOG_PATH)
+    : filter{tbb::filter::mode::serial_in_order}
     , fout{OUTPUT_LOG_PATH}
     {
     }
     void* operator()(void* ptr){
-      if(ptr == nullptr){ std::cerr << "logger got nullptr" << std::endl; return nullptr; }
+      if(ptr == nullptr){ std::cerr << "logger got nullptr\n"; return nullptr; }
       auto _ptr = static_cast<tuple<cv::Mat*, cv::Mat*, frame_timestamp, uint32_t>*>(ptr);
       auto [src, processed, timestamp, frame_index] = *_ptr;
       delete processed;
@@ -97,11 +97,11 @@ int main(int argc, char* argv[]){
   tbb::pipeline pipe;
   auto source = zmq::VideoSource{ZMQ_FRAME_GRABBER_ENDPOINT, ZMQ_FRAME_GRABBER_SOCKTYPE, INACTIVITY_TIMEOUT};
   auto processor = zmq::Processor{source.reader.size, GPU_ID};
-  auto datetime = zmq::DateTimeFilter{OUTPUT_LOG_PATH};
-  auto sink = gst::VideoSink{OUTPUT_VIDEO_PATH, source.reader.fps, source.reader.size};
+  auto logger = zmq::Logger{OUTPUT_LOG_PATH};
+  auto sink = video::VideoSink{OUTPUT_VIDEO_PATH, source.reader.fps, source.reader.size};
   pipe.add_filter(source);
   pipe.add_filter(processor);
-  pipe.add_filter(datetime);
+  pipe.add_filter(logger);
   pipe.add_filter(sink);
 
   // pipe process run in another thread
