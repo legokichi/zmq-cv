@@ -31,7 +31,8 @@ public:
   , INPUT_VIDEO_PATH{INPUT_VIDEO_PATH}
   , USE_SKIP{USE_SKIP}
   , USE_RESIZE{!(0.999 < RESIZE_SCALE && RESIZE_SCALE < 1.001)}
-  , RESIZE_SCALE{RESIZE_SCALE} {
+  , RESIZE_SCALE{RESIZE_SCALE}
+  {
     int width = 0;
     int height = 0;
     for(auto path: INPUT_VIDEO_PATH){

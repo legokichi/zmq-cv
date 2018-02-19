@@ -21,18 +21,35 @@ using zmq::zmq_source_socktype_t;
 
 namespace zmq {
   class Processor: public tbb::thread_bound_filter {
+  public:
+    Processor(const cv::Size DEST_SIZE, const int GPU_ID)
+    : thread_bound_filter(tbb::filter::mode::serial_in_order)
+    {
+    }
+    void* operator()(void* ptr){
+      if(ptr == nullptr){ std::cerr << "gpu processor got nullptr" << std::endl; return nullptr; }
+      auto _ptr = static_cast<tuple<cv::Mat*, frame_timestamp, uint32_t>*>(ptr);
+      auto [src, timestamp, frame_index] = *_ptr;
+      auto processed = new cv::Mat{};
+      delete _ptr;
+      return static_cast<void*>(new tuple<cv::Mat*, cv::Mat*, frame_timestamp, uint32_t>{src, processed, timestamp, frame_index});
+    }
+  };
+
+  class DateTimeFilter: public tbb::filter {
   private:
     std::ofstream fout;
   public:
-    Processor(const cv::Size DEST_SIZE, const int GPU_ID, const string& OUTPUT_LOG_PATH)
-    : thread_bound_filter(tbb::filter::mode::serial_in_order)
+    DateTimeFilter(const string& OUTPUT_LOG_PATH)
+    : filter(tbb::filter::mode::serial_in_order)
     , fout{OUTPUT_LOG_PATH}
     {
     }
     void* operator()(void* ptr){
-      if(ptr == nullptr){ std::cerr << "sense got nullptr" << std::endl; return nullptr; }
-      auto _ptr = static_cast<tuple<cv::Mat*, frame_timestamp, uint32_t>*>(ptr);
-      auto [src, timestamp, frame_index] = *_ptr;
+      if(ptr == nullptr){ std::cerr << "logger got nullptr" << std::endl; return nullptr; }
+      auto _ptr = static_cast<tuple<cv::Mat*, cv::Mat*, frame_timestamp, uint32_t>*>(ptr);
+      auto [src, processed, timestamp, frame_index] = *_ptr;
+      delete processed;
       delete _ptr;
       using namespace date;
       std::cerr << frame_index << ": " << timestamp << "\n";
@@ -79,17 +96,19 @@ int main(int argc, char* argv[]){
 
   tbb::pipeline pipe;
   auto source = zmq::VideoSource{ZMQ_FRAME_GRABBER_ENDPOINT, ZMQ_FRAME_GRABBER_SOCKTYPE, INACTIVITY_TIMEOUT};
-  auto filter = zmq::Processor{source.reader.size, GPU_ID, OUTPUT_LOG_PATH};
+  auto processor = zmq::Processor{source.reader.size, GPU_ID};
+  auto datetime = zmq::DateTimeFilter{OUTPUT_LOG_PATH};
   auto sink = gst::VideoSink{OUTPUT_VIDEO_PATH, source.reader.fps, source.reader.size};
   pipe.add_filter(source);
-  pipe.add_filter(filter);
+  pipe.add_filter(processor);
+  pipe.add_filter(datetime);
   pipe.add_filter(sink);
 
   // pipe process run in another thread
   auto t = thread{([&](){ pipe.run(16); })};
 
   // gpu worker run in main thread
-  while (filter.process_item() != tbb::thread_bound_filter::end_of_stream){ continue; }
+  while (processor.process_item() != tbb::thread_bound_filter::end_of_stream){ continue; }
 
   // waiting all worker stoppped
   t.join();
